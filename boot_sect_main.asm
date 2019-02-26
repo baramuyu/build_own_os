@@ -3,30 +3,35 @@
 
 [org 0x7c00]
 
-mov bx, HELLO
-call print
+	mov bp, 0x8000  ; set the stack safely away from us
+	mov sp, bp
 
-call print_nl
+	mov bx, 0x9000
+	mov dh, 3
+	call disk_load
 
-mov bx, GOODBYE
-call print
+	mov dx, [0x9000] ; retrieve the first loaded word, 0xdada
+	call print_hex
 
-call print_nl
+	call print_nl
 
-mov dx, 0x12fe
-call print_hex  ; print '0x12fe'
+	mov dx, [0x9000 + 512] ; first word from second loaded sector 0xface
+	call print_hex
+	call print_nl
 
-jmp $ ; jump to current address -> loop
+	mov dx, [0x9000 + 1024] ; first word from second loaded sector 0xface
+	call print_hex
+
+	jmp $
 
 %include "boot_sect_print.asm"
 %include "boot_sect_print_hex.asm"
-
-HELLO:
-	db 'Hello, World', 0 ; 0 means end of strings
-
-GOODBYE:
-	db 'Goodbye', 0
+%include "boot_sect_disk.asm"
 
 times 510-($-$$) db 0
 dw 0xaa55
- 	
+ 
+times 256 dw 0xda01 ; sector 2 = 512 bytes
+times 256 dw 0xfa02 ; sector 3 = 512 bytes
+times 256 dw 0xaa03 ; sector 4 = 512 bytes
+
