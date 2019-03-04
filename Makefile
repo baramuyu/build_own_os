@@ -2,28 +2,41 @@
 # $< = first dependency
 # $^ = all dependencies
 
-all: run
+C_SOURCES = $(wildcard kernel/*.c drivers/*.c)
+HEADERS = $(wildcard kernel/*.h drivers/*.h)
 
-kernel.bin: kernel_entry.o kernel.o
+# replace file extension
+OBJ = ${C_SOURCES:.c=.o}
+
+# -g: debugging symbols in gcc
+CFLAG = -g
+
+# first one always run by defalt
+os-image.bin: boot/bootsect.bin kernel.bin
+	cat $^ > $@
+
+kernel.bin: boot/kernel_entry.o ${OBJ}
 	ld -m elf_i386 -s -o $@ -Ttext 0x1000 $^ --oformat binary
 
-kernel.o: kernel.c
-	gcc -m32 -fno-pie -ffreestanding -c $< -o $@
-
-kernel_entry.o: kernel_entry.asm
-	nasm $< -f elf -o $@
-
-bootsect.bin: bootsect.asm
-	nasm $< -f bin -o $@
-
-os-image.bin: bootsect.bin kernel.bin
-	cat $^ > $@
+kernel.elf: boot/kernel_entry.o ${OBJ}
+	ld -o $@ -T text 0x1000 $^
 
 run: os-image.bin
 	qemu-system-i386 -fda $<
 
-kernel.dis: kernel.bin
-	ndisasm -b 32 $< > $@
+debug: os-image.bin kernel.elf
+	qemu-system-i386 -fda $< & 
+	${GDB} -ex "target remote localhost:1234" -ex "symbol-file kernel.elf"
+
+%.o: %.c ${HEADERS}
+	${CC} ${CFLAGS} -m32 -fno-pie -ffreestanding -c $< -o $@
+
+%.o: %.asm
+	nasm $< -f elf -o $@
+
+%.bin: %.asm
+	nasm $< -f bin -o $@
 
 clean:
-	rm *.bin *.o *.dis
+	rm -rf *.bin *.dis *.o os-image.bin *.elf
+	rm -rf kernel/*.o boot/*.bin drivers/*.o boot/*.o
