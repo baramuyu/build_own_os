@@ -1,23 +1,14 @@
 // gcc -m32 -fno-pie -ffreestanding -c kernel.c -o kernel.o
 
-#include "../drivers/ports.h"
+#include "../drivers/screen.h"
 
 void main()
 {
-	// screen cursor position: ask VGA control register(0x3d4) for bytes
-	// 14 = high byte of cursor and 15 low byte of cursor
-	port_byte_out(0x3d4, 14);
+	clear_screen();
+	kprint_at("Y", 2, 2);
+	kprint_at("Apache Spark is an open-source distributed general-purpose cluster-computing framework. ", 2, 4);
+	kprint_at("Spark provides an interface for programming entire \nclusters with implicit data parallelism and fault tolerance.\n", 2, 7);
+	kprint("\nthe Spark codebase was later donated to \nthe Apache Software Foundation.");
+	kprint_at("What happens when we run out of space?", 45, 24);
 
-	// data is returned in VGA data register (0x3d5)
-	int position = port_byte_in(0x3d5);
-	position += port_byte_in(0x3d5);
-
-
-	int offset_from_vga = position * 2;
-
-
-
-	char* vga = (char *)0xb8000;
-	vga[offset_from_vga] = 'X';
-	vga[offset_from_vga+1] = 0x0f;
-}
+}	

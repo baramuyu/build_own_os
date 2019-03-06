@@ -30,7 +30,7 @@ load_kernel:
 	call print_nl
 
 	mov bx, KERNEL_OFFSET ; Read from disk and store in 0x1000
-	mov dh, 2 ; how many sector you read
+	mov dh, 16 ; how many sector you read
 	mov dl, [BOOT_DRIVE]
 	call disk_load
 	ret
