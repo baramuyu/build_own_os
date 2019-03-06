@@ -15,10 +15,10 @@ CFLAG = -g
 os-image.bin: boot/bootsect.bin kernel.bin
 	cat $^ > $@
 
-kernel.bin: boot/kernel_entry.o kernel/kernel.o
+kernel.bin: boot/kernel_entry.o ${OBJ}
 	ld -m elf_i386 -s -o $@ -Ttext 0x1000 $^ --oformat binary
 
-kernel.elf: boot/kernel_entry.o kernel/kernel.o
+kernel.elf: boot/kernel_entry.o ${OBJ}
 	ld -m elf_i386 -o $@ -Ttext 0x1000 $^
 
 run: os-image.bin
@@ -26,8 +26,7 @@ run: os-image.bin
 
 # not working for now
 debug: os-image.bin kernel.elf
-	qemu-system-i386 -fda $< & 
-	${GDB} -ex "target remote localhost:1234" -ex "symbol-file kernel.elf"
+	qemu-system-i386 -fda $< & ${GDB} -ex "target remote localhost:1234" -ex "symbol-file kernel.elf"
 
 %.o: %.c ${HEADERS}
 	gcc ${CFLAGS} -m32 -fno-pie -ffreestanding -c $< -o $@
